@@ -1,66 +1,91 @@
 const { PrismaClient } = require('@prisma/client');
-const { generatePlaylistFromMood } = require('../utils/openaiService');
-const trackService = require('./trackService');
-
 const prisma = new PrismaClient();
+const redisClient = require('../utils/redisClient');
+const llmService = require('../utils/llmService');
 
 class PlaylistService {
-  async generatePlaylist(moodPrompt, trackCount = 5) {
+  async generatePlaylist(mood, trackCount = 5, userId = null) {
     try {
-      const tracks = await trackService.getAvailableTracks();
-      
-      if (tracks.length === 0) {
-        throw new Error('No tracks available. Please upload some music first.');
-      }
-
-      if (tracks.length < trackCount) {
-        trackCount = tracks.length;
-      }
-
-      const playlistTracks = await generatePlaylistFromMood(moodPrompt, tracks, trackCount);
-
-      if (playlistTracks.length === 0) {
-        throw new Error('Could not generate a playlist for the given mood');
-      }
-
-      const playlist = await prisma.playlist.create({
-        data: {
-          moodPrompt: moodPrompt,
-          tracks: {
-            create: playlistTracks.map(pt => ({
-              trackId: pt.trackId,
-              weight: pt.weight,
-              order: pt.order
-            }))
-          }
+      const tracks = await prisma.track.findMany({
+        where: { 
+          status: 'ACTIVE',
+          ...(userId && { userId })
         },
-        include: {
-          tracks: {
-            include: {
-              track: true
-            },
-            orderBy: {
-              order: 'asc'
-            }
-          }
+        select: {
+          id: true,
+          title: true,
+          artist: true,
+          genre: true,
+          duration: true,
+          bpm: true,
+          filePath: true
         }
       });
 
-      for (const pt of playlistTracks) {
-        await trackService.incrementPlayCount(pt.trackId);
+      if (tracks.length < 3) {
+        throw new Error('Need at least 3 tracks to generate a playlist');
       }
 
-      return playlist;
+      const llmResult = await llmService.generatePlaylist(
+        tracks,
+        mood,
+        Math.min(trackCount, tracks.length)
+      );
+
+      const playlist = await prisma.playlist.create({
+        data: {
+          name: `${mood} Mix`,
+          mood,
+          description: llmResult.reasoning,
+          userId
+        }
+      });
+
+      const playlistItems = [];
+      for (const item of llmResult.tracks) {
+        const track = await prisma.track.findUnique({
+          where: { id: item.trackId }
+        });
+
+        if (track) {
+          const playlistItem = await prisma.playlistItem.create({
+            data: {
+              playlistId: playlist.id,
+              trackId: track.id,
+              weight: item.weight,
+              order: item.order
+            }
+          });
+
+          await prisma.track.update({
+            where: { id: track.id },
+            data: { usageCount: { increment: 1 } }
+          });
+
+          playlistItems.push(playlistItem);
+          
+          await redisClient.del('top_tracks');
+        }
+      }
+
+      return {
+        playlistId: playlist.id,
+        mood,
+        tracks: llmResult.tracks,
+        reasoning: llmResult.reasoning
+      };
+
     } catch (error) {
-      console.error('Error generating playlist:', error);
+      console.error('Playlist generation error:', error);
       throw error;
     }
   }
 
-  async getAllPlaylists() {
-    return await prisma.playlist.findMany({
+  async getPlaylist(playlistId) {
+    const playlist = await prisma.playlist.findUnique({
+      where: { id: playlistId },
       include: {
-        tracks: {
+        items: {
           include: {
             track: true
           },
@@ -68,27 +93,37 @@ class PlaylistService {
             order: 'asc'
           }
         }
-      },
-      orderBy: {
-        createdAt: 'desc'
       }
     });
+
+    return playlist;
   }
 
-  async getPlaylistById(id) {
-    return await prisma.playlist.findUnique({
-      where: { id },
-      include: {
-        tracks: {
-          include: {
-            track: true
-          },
-          orderBy: {
-            order: 'asc'
-          }
-        }
+  async getTopTracks(limit = 10) {
+    const cacheKey = `top_tracks_${limit}`;
+    
+    const cached = await redisClient.get(cacheKey);
+    if (cached) {
+      return JSON.parse(cached);
+    }
+
+    const topTracks = await prisma.track.findMany({
+      where: { status: 'ACTIVE' },
+      orderBy: { usageCount: 'desc' },
+      take: limit,
+      select: {
+        id: true,
+        title: true,
+        artist: true,
+        genre: true,
+        usageCount: true,
+        duration: true
       }
     });
+
+    await redisClient.setex(cacheKey, 300, JSON.stringify(topTracks));
+    
+    return topTracks;
   }
 }
 
