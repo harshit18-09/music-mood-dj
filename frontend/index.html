@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Mood DJ</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-music"></i> Music Mood DJ</h1>
+            <p class="subtitle">Upload music, generate mood-based playlists, and enjoy!</p>
+        </header>
+
+        <div class="app-container">
+            <!-- Left Column -->
+            <div class="left-column">
+                <!-- Upload Section -->
+                <section class="card upload-section">
+                    <h2><i class="fas fa-upload"></i> Upload Music</h2>
+                    <form id="uploadForm">
+                        <div class="file-upload">
+                            <label for="audioFile">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <span>Choose MP3/WAV file</span>
+                                <input type="file" id="audioFile" accept=".mp3,.wav" required>
+                            </label>
+                            <div id="fileName"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="title">Title:</label>
+                            <input type="text" id="title" placeholder="Enter track title">
+                        </div>
+                        <div class="form-group">
+                            <label for="artist">Artist:</label>
+                            <input type="text" id="artist" placeholder="Enter artist name">
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-upload"></i> Upload Track
+                        </button>
+                    </form>
+                    <div id="uploadStatus"></div>
+                </section>
+
+                <!-- Mood Playlist Generator -->
+                <section class="card playlist-section">
+                    <h2><i class="fas fa-magic"></i> Generate Mood Playlist</h2>
+                    <form id="playlistForm">
+                        <div class="form-group">
+                            <label for="mood">Mood/Theme:</label>
+                            <input type="text" id="mood" placeholder="e.g., calm focus, romantic evening, workout energy" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="trackCount">Number of tracks:</label>
+                            <select id="trackCount">
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5" selected>5</option>
+                                <option value="6">6</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-secondary">
+                            <i class="fas fa-wand-magic-sparkles"></i> Generate Playlist
+                        </button>
+                    </form>
+                    <div id="playlistStatus"></div>
+                </section>
+
+                <!-- Available Tracks -->
+                <section class="card tracks-section">
+                    <h2><i class="fas fa-list"></i> Available Tracks</h2>
+                    <div id="tracksList" class="tracks-list"></div>
+                </section>
+            </div>
+
+            <!-- Right Column -->
+            <div class="right-column">
+                <!-- Audio Player -->
+                <section class="card player-section">
+                    <h2><i class="fas fa-play-circle"></i> Now Playing</h2>
+                    <div class="player">
+                        <div class="track-info">
+                            <div id="currentTrack">Select a track to play</div>
+                            <div id="currentArtist"></div>
+                        </div>
+                        <div class="controls">
+                            <button id="prevBtn" class="control-btn"><i class="fas fa-step-backward"></i></button>
+                            <button id="playBtn" class="control-btn play-btn"><i class="fas fa-play"></i></button>
+                            <button id="nextBtn" class="control-btn"><i class="fas fa-step-forward"></i></button>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar">
+                                <div id="progressFill" class="progress-fill"></div>
+                            </div>
+                            <div class="time">
+                                <span id="currentTime">0:00</span>
+                                <span id="duration">0:00</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="volume-control">
+                        <i class="fas fa-volume-down"></i>
+                        <input type="range" id="volume" min="0" max="1" step="0.1" value="0.7">
+                        <i class="fas fa-volume-up"></i>
+                    </div>
+                </section>
+
+                <!-- Generated Playlist -->
+                <section class="card generated-playlist-section">
+                    <h2><i class="fas fa-play-circle"></i> Current Playlist</h2>
+                    <div id="playlistTracks" class="playlist-tracks"></div>
+                </section>
+
+                <!-- Top Tracks -->
+                <section class="card stats-section">
+                    <div class="stats-header">
+                        <h2><i class="fas fa-chart-bar"></i> Top Tracks</h2>
+                        <button id="refreshStats" class="btn btn-small">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                    <div id="topTracks" class="top-tracks">
+                        <div class="loading">Loading top tracks...</div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <footer>
+            <p>Music Mood DJ &copy; 2024 | Upload, Generate, Enjoy!</p>
+        </footer>
+    </div>
+
+    <audio id="audioPlayer" crossorigin="anonymous"></audio>
+    <script src="script.js"></script>
+</body>
+</html>
