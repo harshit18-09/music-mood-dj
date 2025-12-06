@@ -4,136 +4,210 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Music Mood DJ</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; min-height: 100vh; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        header { text-align: center; margin-bottom: 30px; }
+        h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .section { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 15px; padding: 25px; margin-bottom: 25px; }
+        h2 { margin-bottom: 15px; color: #fff; }
+        input, textarea, button { width: 100%; padding: 12px; margin: 8px 0; border: none; border-radius: 8px; font-size: 16px; }
+        button { background: #4CAF50; color: white; cursor: pointer; font-weight: bold; transition: background 0.3s; }
+        button:hover { background: #45a049; }
+        button:disabled { background: #666; cursor: not-allowed; }
+        .file-input { background: white; color: #333; }
+        .track-list { margin-top: 15px; }
+        .track-item { background: rgba(255,255,255,0.2); padding: 10px; margin: 5px 0; border-radius: 5px; display: flex; justify-content: space-between; }
+        .playlist-item { background: rgba(255,255,255,0.2); padding: 15px; margin: 10px 0; border-radius: 8px; }
+        .audio-player { width: 100%; margin-top: 10px; }
+        .hidden { display: none; }
+        #status { padding: 10px; text-align: center; font-weight: bold; }
+        .success { background: rgba(76, 175, 80, 0.3); color: #4CAF50; }
+        .error { background: rgba(244, 67, 54, 0.3); color: #f44336; }
+        .loading { color: #ffc107; }
+    </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1><i class="fas fa-music"></i> Music Mood DJ</h1>
-            <p class="subtitle">Upload music, generate mood-based playlists, and enjoy!</p>
+            <h1>🎵 Music Mood DJ</h1>
+            <p>Upload music, generate mood-based playlists with AI, and play!</p>
         </header>
 
-        <div class="app-container">
-            <!-- Left Column -->
-            <div class="left-column">
-                <!-- Upload Section -->
-                <section class="card upload-section">
-                    <h2><i class="fas fa-upload"></i> Upload Music</h2>
-                    <form id="uploadForm">
-                        <div class="file-upload">
-                            <label for="audioFile">
-                                <i class="fas fa-cloud-upload-alt"></i>
-                                <span>Choose MP3/WAV file</span>
-                                <input type="file" id="audioFile" accept=".mp3,.wav" required>
-                            </label>
-                            <div id="fileName"></div>
-                        </div>
-                        <div class="form-group">
-                            <label for="title">Title:</label>
-                            <input type="text" id="title" placeholder="Enter track title">
-                        </div>
-                        <div class="form-group">
-                            <label for="artist">Artist:</label>
-                            <input type="text" id="artist" placeholder="Enter artist name">
-                        </div>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-upload"></i> Upload Track
-                        </button>
-                    </form>
-                    <div id="uploadStatus"></div>
-                </section>
-
-                <!-- Mood Playlist Generator -->
-                <section class="card playlist-section">
-                    <h2><i class="fas fa-magic"></i> Generate Mood Playlist</h2>
-                    <form id="playlistForm">
-                        <div class="form-group">
-                            <label for="mood">Mood/Theme:</label>
-                            <input type="text" id="mood" placeholder="e.g., calm focus, romantic evening, workout energy" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="trackCount">Number of tracks:</label>
-                            <select id="trackCount">
-                                <option value="3">3</option>
-                                <option value="4">4</option>
-                                <option value="5" selected>5</option>
-                                <option value="6">6</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-secondary">
-                            <i class="fas fa-wand-magic-sparkles"></i> Generate Playlist
-                        </button>
-                    </form>
-                    <div id="playlistStatus"></div>
-                </section>
-
-                <!-- Available Tracks -->
-                <section class="card tracks-section">
-                    <h2><i class="fas fa-list"></i> Available Tracks</h2>
-                    <div id="tracksList" class="tracks-list"></div>
-                </section>
-            </div>
-
-            <!-- Right Column -->
-            <div class="right-column">
-                <!-- Audio Player -->
-                <section class="card player-section">
-                    <h2><i class="fas fa-play-circle"></i> Now Playing</h2>
-                    <div class="player">
-                        <div class="track-info">
-                            <div id="currentTrack">Select a track to play</div>
-                            <div id="currentArtist"></div>
-                        </div>
-                        <div class="controls">
-                            <button id="prevBtn" class="control-btn"><i class="fas fa-step-backward"></i></button>
-                            <button id="playBtn" class="control-btn play-btn"><i class="fas fa-play"></i></button>
-                            <button id="nextBtn" class="control-btn"><i class="fas fa-step-forward"></i></button>
-                        </div>
-                        <div class="progress">
-                            <div class="progress-bar">
-                                <div id="progressFill" class="progress-fill"></div>
-                            </div>
-                            <div class="time">
-                                <span id="currentTime">0:00</span>
-                                <span id="duration">0:00</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="volume-control">
-                        <i class="fas fa-volume-down"></i>
-                        <input type="range" id="volume" min="0" max="1" step="0.1" value="0.7">
-                        <i class="fas fa-volume-up"></i>
-                    </div>
-                </section>
-
-                <!-- Generated Playlist -->
-                <section class="card generated-playlist-section">
-                    <h2><i class="fas fa-play-circle"></i> Current Playlist</h2>
-                    <div id="playlistTracks" class="playlist-tracks"></div>
-                </section>
-
-                <!-- Top Tracks -->
-                <section class="card stats-section">
-                    <div class="stats-header">
-                        <h2><i class="fas fa-chart-bar"></i> Top Tracks</h2>
-                        <button id="refreshStats" class="btn btn-small">
-                            <i class="fas fa-sync-alt"></i> Refresh
-                        </button>
-                    </div>
-                    <div id="topTracks" class="top-tracks">
-                        <div class="loading">Loading top tracks...</div>
-                    </div>
-                </section>
-            </div>
+        <div class="section">
+            <h2>📁 Upload Music</h2>
+            <input type="file" id="fileInput" class="file-input" accept="audio/mp3,audio/wav">
+            <input type="text" id="trackTitle" placeholder="Track Title">
+            <input type="text" id="trackArtist" placeholder="Artist (optional)">
+            <button id="uploadBtn" onclick="uploadTrack()">Upload Track</button>
         </div>
 
-        <footer>
-            <p>Music Mood DJ &copy; 2024 | Upload, Generate, Enjoy!</p>
-        </footer>
+        <div class="section">
+            <h2>🎭 Generate Playlist</h2>
+            <input type="text" id="moodInput" placeholder="Enter mood (e.g., 'calm focus', 'energetic workout')">
+            <button id="generateBtn" onclick="generatePlaylist()">Generate Playlist with AI</button>
+            <div id="playlistResult" class="hidden"></div>
+        </div>
+
+        <div class="section">
+            <h2>📊 Top Tracks</h2>
+            <button onclick="loadTopTracks()">Show Most Played Tracks</button>
+            <div id="topTracks" class="track-list"></div>
+        </div>
+
+        <div class="section">
+            <h2>🎶 Available Tracks</h2>
+            <button onclick="loadTracks()">Load All Tracks</button>
+            <div id="tracksList" class="track-list"></div>
+        </div>
+
+        <div id="status"></div>
     </div>
 
-    <audio id="audioPlayer" crossorigin="anonymous"></audio>
-    <script src="script.js"></script>
+    <script>
+        const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : '/api';
+        
+        function showStatus(message, type = '') {
+            const status = document.getElementById('status');
+            status.className = type;
+            status.textContent = message;
+            status.classList.remove('hidden');
+            setTimeout(() => status.classList.add('hidden'), 3000);
+        }
+
+        async function uploadTrack() {
+            const fileInput = document.getElementById('fileInput');
+            const title = document.getElementById('trackTitle');
+            const artist = document.getElementById('trackArtist');
+            
+            if (!fileInput.files[0]) {
+                showStatus('Please select a file', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('title', title.value || fileInput.files[0].name);
+            if (artist.value) formData.append('artist', artist.value);
+
+            try {
+                showStatus('Uploading...', 'loading');
+                const response = await fetch(`${API_BASE}/tracks/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    showStatus('Track uploaded successfully!', 'success');
+                    fileInput.value = '';
+                    title.value = '';
+                    artist.value = '';
+                    loadTracks();
+                } else {
+                    showStatus(result.error || 'Upload failed', 'error');
+                }
+            } catch (error) {
+                showStatus('Network error', 'error');
+            }
+        }
+
+        async function generatePlaylist() {
+            const mood = document.getElementById('moodInput').value;
+            if (!mood) {
+                showStatus('Please enter a mood', 'error');
+                return;
+            }
+
+            try {
+                showStatus('Generating playlist with AI...', 'loading');
+                const response = await fetch(`${API_BASE}/playlists/generate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mood, trackCount: 5 })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    showStatus('Playlist generated!', 'success');
+                    displayPlaylist(result.playlist);
+                } else {
+                    showStatus(result.error || 'Generation failed', 'error');
+                }
+            } catch (error) {
+                showStatus('Network error', 'error');
+            }
+        }
+
+        function displayPlaylist(playlist) {
+            const container = document.getElementById('playlistResult');
+            container.innerHTML = `
+                <h3>${playlist.name}</h3>
+                <p>${playlist.description || 'AI-generated playlist'}</p>
+                <div id="playlistTracks"></div>
+            `;
+            container.classList.remove('hidden');
+            
+            // Tracks will be loaded when user clicks play
+        }
+
+        async function loadTopTracks() {
+            try {
+                const response = await fetch(`${API_BASE}/stats/top-tracks?limit=10`);
+                const result = await response.json();
+                
+                const container = document.getElementById('topTracks');
+                if (result.tracks && result.tracks.length > 0) {
+                    container.innerHTML = result.tracks.map((track, index) => `
+                        <div class="track-item">
+                            <div>
+                                <strong>${index + 1}. ${track.title}</strong><br>
+                                ${track.artist || 'Unknown'} • ${track.genre || 'Unknown'} • ${Math.floor(track.duration/60)}:${(track.duration%60).toString().padStart(2,'0')}
+                            </div>
+                            <div>Plays: ${track.usageCount || 0}</div>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<p>No tracks yet. Upload some music!</p>';
+                }
+            } catch (error) {
+                showStatus('Failed to load top tracks', 'error');
+            }
+        }
+
+        async function loadTracks() {
+            try {
+                const response = await fetch(`${API_BASE}/tracks`);
+                const result = await response.json();
+                
+                const container = document.getElementById('tracksList');
+                if (result.tracks && result.tracks.length > 0) {
+                    container.innerHTML = result.tracks.map(track => `
+                        <div class="track-item">
+                            <div>
+                                <strong>${track.title}</strong><br>
+                                ${track.artist || 'Unknown'} • ${track.genre || 'Unknown'}
+                            </div>
+                            <button onclick="playTrack('${track.filePath}')">▶ Play</button>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<p>No tracks uploaded yet.</p>';
+                }
+            } catch (error) {
+                showStatus('Failed to load tracks', 'error');
+            }
+        }
+
+        function playTrack(filePath) {
+            const audio = new Audio(filePath);
+            audio.play();
+            showStatus('Playing track...', 'success');
+        }
+
+        // Load tracks on page load
+        window.onload = loadTracks;
+    </script>
 </body>
 </html>
